@@ -69,6 +69,11 @@ button[data-wrap="false"] #label { white-space: nowrap; overflow: hidden; text-o
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
+/* Progress ring: an SVG circle whose dash offset is set from JS and animated here */
+.ring svg { width: 0.875rem; height: 0.875rem; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke: currentColor; stroke-width: 2; }
+.ring .track { opacity: 0.25; }
+.ring .bar { stroke-dasharray: 37.7; transition: stroke-dashoffset 0.4s ease; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Secondary (default): hover and active only tint the background */

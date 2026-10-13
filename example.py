@@ -49,6 +49,19 @@ def callback():
         st.write(st.session_state["job_result"])
 
 
+st.subheader("Progress ring")
+
+
+@demo
+def progress_ring():
+    with stateful_button("Import", progress=True, icon=":material/upload:", key="import") as btn:
+        if btn:
+            for step in (25, 50, 75, 100):
+                time.sleep(1)
+                btn.update(step)
+            st.success("Imported!")
+
+
 st.subheader("Variants")
 
 

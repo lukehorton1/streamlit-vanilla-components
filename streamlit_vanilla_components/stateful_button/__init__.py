@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import time
 from pathlib import Path
 
 import streamlit as st
@@ -23,13 +24,49 @@ _COMPONENT = st.components.v2.component(
 )
 
 
+MIN_REDRAW_SECONDS = 0.25
+
+
 class StatefulButton:
     """Returned by `stateful_button`. Use it as a bool, a context manager, or both."""
 
-    def __init__(self, clicked: bool, release):
+    def __init__(self, clicked: bool, release, show_progress=None):
         self.clicked = clicked
         self._release = release
         self._released = False
+        # None unless the button was created with progress=True
+        self._show_progress = show_progress
+        self._value = 0
+        self._last_draw = 0.0
+
+    def update(self, progress: int | float) -> None:
+        """Move the progress ring. Like `st.progress`: an int is 0-100, a float is 0.0-1.0."""
+        if self._show_progress is None:
+            raise st.errors.StreamlitAPIException(
+                "update() needs a button created with progress=True."
+            )
+        if isinstance(progress, bool) or not isinstance(progress, (int, float)):
+            raise st.errors.StreamlitAPIException("progress must be an int or a float.")
+        if isinstance(progress, int) and 0 <= progress <= 100:
+            percent = progress
+        elif isinstance(progress, float) and 0.0 <= progress <= 1.0:
+            percent = progress * 100
+        else:
+            raise st.errors.StreamlitAPIException(
+                "progress must be an int from 0 to 100, or a float from 0.0 to 1.0."
+            )
+        # Nothing to draw if the button wasn't clicked or has already finished
+        if not self.clicked or self._released:
+            return
+        # Every redraw remounts the button (a brief flicker), so draw at most
+        # every MIN_REDRAW_SECONDS. Skipped values are fine: the next draw
+        # animates from the last value shown. 100 always draws so the ring completes.
+        now = time.monotonic()
+        if percent < 100 and now - self._last_draw < MIN_REDRAW_SECONDS:
+            return
+        self._last_draw = now
+        self._show_progress(self._value, percent)
+        self._value = percent
 
     def release(self, success: bool = True) -> None:
         # Only ever re-render once per run, or Streamlit complains about a duplicate key
@@ -64,6 +101,7 @@ def stateful_button(
     width: str | int = "content",
     shortcut: str | None = None,
     wrap: bool | None = None,
+    progress: bool = False,
 ) -> StatefulButton:
     """Same parameters as `st.button`. Labels are plain text (no Markdown).
 
@@ -80,10 +118,25 @@ def stateful_button(
 
     Without either, nothing tells the button when the work is done, so it keeps
     spinning until the next rerun.
+
+    Pass `progress=True` to get a ring that fills up instead of a spinner. It starts
+    empty when clicked, and you move it with `update()` inside the `with` block
+    (an int is 0-100, a float is 0.0-1.0, like `st.progress`):
+
+        with stateful_button("Import", progress=True) as btn:
+            if btn:
+                load_first_half()
+                btn.update(50)
+                load_second_half()
     """
+    if progress and on_click:
+        raise st.errors.StreamlitAPIException(
+            "progress=True needs the `with` form, because a callback can't call update()."
+        )
+
     # Without a key, the same arguments give the same identity on every rerun
     ident = key or hashlib.md5(
-        repr((label, type, icon, icon_position, width, shortcut)).encode()
+        repr((label, type, icon, icon_position, width, shortcut, progress)).encode()
     ).hexdigest()[:10]
     nonce_name = f"_stateful_button_nonce_{ident}"
     done_name = f"_stateful_button_done_{ident}"
@@ -103,6 +156,7 @@ def stateful_button(
         "width": width,
         "shortcut": shortcut,
         "wrap": wrap,
+        "progress": progress,
     }
 
     def callback():
@@ -114,21 +168,37 @@ def stateful_button(
                 # so keep the error and raise it later in the script instead
                 st.session_state[failed_name] = e
 
+    # Progress mode redraws the button on every update(). A fixed-height wrapper exists
+    # before the new copy has rendered, so the content below doesn't jump up and back.
+    # 40px is the height of a single-line button (2.5rem).
+    height = 40 if progress else "content"
+
     def mount(n: int, done: bool = False):
         # A new nonce means a new component identity, which gives a fresh idle button
         return _COMPONENT(
             key=f"{ident}-{n}",
             data={**data, "done": done},
             width=width,
+            height=height,
             on_clicked_change=callback,
         )
+
+    def show_progress(start: float, end: float):
+        # A display-only copy (no key, no click handler) shown while the work runs.
+        # Python can redraw it freely, and it animates the ring from `start` to `end`.
+        with slot:
+            _COMPONENT(
+                data={**data, "busy": True, "from": start, "value": end},
+                width=width,
+                height=height,
+            )
 
     slot = st.empty()
     with slot:
         result = mount(nonce, done=was_done)
 
     if not result.clicked:
-        return StatefulButton(False, lambda ok: None)
+        return StatefulButton(False, lambda ok: None, show_progress if progress else None)
 
     # The browser keeps the old button disabled. Bump the nonce so the next run
     # (or the end of the `with` block) mounts a fresh, enabled one.
@@ -140,7 +210,7 @@ def stateful_button(
         with slot:
             mount(nonce + 1, done=success)
 
-    button = StatefulButton(True, release)
+    button = StatefulButton(True, release, show_progress if progress else None)
     if on_click:
         # The callback already ran before this script started, so the work is finished
         error = st.session_state.pop(failed_name, None)

@@ -24,10 +24,28 @@ function parseShortcut(text) {
     e.shiftKey === want.shift
 }
 
-function renderIcon(el, icon, busy, done) {
+// Circumference of the ring's circle (radius 6), used to turn a percentage into a dash offset
+const CIRCUMFERENCE = 37.7
+const RING = `<svg viewBox="0 0 16 16"><circle class="track" cx="8" cy="8" r="6"/><circle class="bar" cx="8" cy="8" r="6"/></svg>`
+
+// Draws the ring at `from`, then moves it to `to` so the CSS transition animates the change
+function renderRing(el, from, to) {
+  el.className = "icon ring"
+  el.innerHTML = RING
+  const bar = el.querySelector(".bar")
+  const offset = (percent) => String(CIRCUMFERENCE * (1 - percent / 100))
+  bar.style.strokeDashoffset = offset(from)
+  bar.getBoundingClientRect() // forces layout, so the next change is animated
+  bar.style.strokeDashoffset = offset(to)
+}
+
+// `ring` is null for the spinner, or { from, to } (percentages) for the progress ring
+function renderIcon(el, icon, busy, done, ring = null) {
   el.className = "icon"
   el.textContent = ""
-  if (busy) {
+  if (busy && ring) {
+    renderRing(el, ring.from, ring.to)
+  } else if (busy) {
     el.className = "icon spinner"
   } else if (done) {
     el.className = "icon material-symbols"
@@ -56,6 +74,14 @@ export default function (component) {
   renderIcon(icon, data.icon, false, data.done)
   btn.disabled = data.disabled || data.done
 
+  // Python sends this display-only version while `update()` is moving the ring.
+  // It can't be clicked, so it has no handlers.
+  if (data.busy) {
+    btn.disabled = true
+    renderIcon(icon, data.icon, true, false, { from: data.from, to: data.value })
+    return
+  }
+
   // After a successful run, show a tick for a moment, then restore the original icon
   const timer = data.done
     ? setTimeout(() => {
@@ -69,7 +95,7 @@ export default function (component) {
   function click() {
     if (btn.disabled) return
     btn.disabled = true
-    renderIcon(icon, data.icon, true)
+    renderIcon(icon, data.icon, true, false, data.progress ? { from: 0, to: 0 } : null)
     setTriggerValue("clicked", true)
   }
   btn.onclick = click
