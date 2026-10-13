@@ -1,0 +1,103 @@
+/* Approximation of the native st.button, driven by Streamlit's theme variables. */
+:host {
+  display: block;
+}
+
+button {
+  --primary: var(--st-primary-color, #ff4b4b);
+  --on-primary: #fff;
+  --hover-overlay: rgba(172, 177, 195, 0.15);
+  --active-overlay: rgba(172, 177, 195, 0.25);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  min-height: 2.5rem;
+  max-width: 100%;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--st-border-color);
+  border-radius: var(--st-button-radius, 0.5rem);
+  background: color-mix(in srgb, var(--st-secondary-background-color) 30%, var(--st-background-color));
+  color: var(--st-text-color);
+  font-family: var(--st-font, sans-serif);
+  font-size: 1rem;
+  font-weight: var(--st-base-font-weight, 400);
+  line-height: 1.6;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
+}
+
+/* Layout options: width and icon side */
+button[data-width="stretch"] { width: 100%; }
+button[data-icon-position="right"] { flex-direction: row-reverse; }
+
+/* Label: wrap onto extra lines, or stay on one row with an ellipsis */
+#label { min-width: 0; font-size: 0.875rem; line-height: 1.6; }
+button[data-wrap="true"] #label { white-space: normal; overflow-wrap: anywhere; }
+button[data-wrap="false"] #label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Icons */
+.icon:empty:not(.spinner) { display: none; }
+/* Every icon (emoji, Material, spinner, tick) gets the same box so the button never resizes */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+}
+.material-symbols {
+  font-family: "Material Symbols Rounded";
+  font-size: 1rem;
+  line-height: 1;
+  font-weight: normal;
+  font-feature-settings: "liga";
+  -webkit-font-feature-settings: "liga";
+}
+
+/* Spinner shown while the script is working. The ring spins inside the standard icon box. */
+.spinner::before {
+  content: "";
+  box-sizing: border-box;
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Secondary (default): hover and active only tint the background */
+button:hover:not(:disabled) { background-image: linear-gradient(var(--hover-overlay), var(--hover-overlay)); }
+button:active:not(:disabled) { background-image: linear-gradient(var(--active-overlay), var(--active-overlay)); }
+
+/* Primary (darker shades are the primary colour with lightness reduced) */
+button[data-type="primary"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+button[data-type="primary"]:hover:not(:disabled) {
+  background: hsl(from var(--primary) h s calc(l - 15));
+  border-color: hsl(from var(--primary) h s calc(l - 15));
+  background-image: none;
+}
+button[data-type="primary"]:active:not(:disabled) {
+  background: var(--primary);
+  border-color: hsl(from var(--primary) h s calc(l - 15));
+  background-image: none;
+}
+
+/* Tertiary: no border, no padding, text changes colour */
+button[data-type="tertiary"] { background: transparent; border: 0; padding: 0; }
+button[data-type="tertiary"]:hover:not(:disabled) { color: var(--primary); background-image: none; }
+button[data-type="tertiary"]:active:not(:disabled) { color: hsl(from var(--primary) h s calc(l - 25)); background-image: none; }
+
+button:focus-visible { outline: none; box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--primary) 50%, transparent); }
+button:focus-visible:not(:disabled):not([data-type="primary"]):not([data-type="tertiary"]) { background-image: linear-gradient(var(--hover-overlay), var(--hover-overlay)); }
+
+button:disabled {
+  background: transparent;
+  color: color-mix(in srgb, var(--st-text-color) 40%, transparent);
+  cursor: not-allowed;
+}
