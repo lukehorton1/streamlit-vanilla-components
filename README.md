@@ -2,6 +2,8 @@
 
 Lightweight [Streamlit components v2](https://docs.streamlit.io/develop/api-reference/custom-components) in plain HTML, CSS and JavaScript. No npm packages, no build step. Each component copies its native Streamlit look and follows the active theme.
 
+Built using GitHub Copilot as an AI coding agent, with manual oversight, design and testing throughout.
+
 ```python
 from streamlit_vanilla_components import st_live_searchbox, stateful_button
 ```
