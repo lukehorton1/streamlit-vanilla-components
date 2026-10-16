@@ -21,11 +21,13 @@ streamlit_vanilla_components/
       index.js
       style.css
 example.py                 <- ONE shared demo app for all components
+README.md                  <- API docs for every component
 ```
 
 - Use `stateful_button` and `searchbox` as the reference implementations.
 - Frontend files are read at import time. Restart Streamlit after editing them (reload is not enough).
 - Add a section for each new component to `example.py`. Do not create per-component example files.
+- Document each new component in `README.md` (install/usage, full parameter table, return value, behaviour notes) and keep it updated when a component's API changes.
 
 ## Python API
 
@@ -66,4 +68,4 @@ Streamlit's DOM is not stable API, so copy values and structure, never class nam
 
 - Use `python3`. Run `streamlit run example.py`.
 - Smoke-test the demo with `streamlit.testing.v1.AppTest` and check it in the browser.
-- Before a PR: demo tidy (no debug or comparison widgets), `WORKING_NOTES.md` updated, and no stray files.
+- Before a PR: demo tidy (no debug or comparison widgets), `WORKING_NOTES.md` and `README.md` updated, and no stray files.
