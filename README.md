@@ -10,6 +10,20 @@ from streamlit_vanilla_components import st_live_searchbox, stateful_button
 
 Run the demo with `streamlit run example.py`.
 
+## Installation
+
+```bash
+pip install streamlit-vanilla-components
+```
+
+Or install straight from GitHub:
+
+```bash
+pip install "git+https://github.com/lukehorton1/streamlit-vanilla-components.git"
+```
+
+Requires Python 3.10+ and Streamlit 1.57+.
+
 ## Components
 
 - [`st_live_searchbox`](#st_live_searchbox)
