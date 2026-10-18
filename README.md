@@ -4,11 +4,7 @@ Lightweight [Streamlit components v2](https://docs.streamlit.io/develop/api-refe
 
 Built using GitHub Copilot as an AI coding agent, with manual oversight, design and testing throughout.
 
-```python
-from streamlit_vanilla_components import st_live_searchbox, stateful_button
-```
-
-Run the demo with `streamlit run example.py`.
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://vanilla-components.streamlit.app)
 
 ## Installation
 
@@ -16,13 +12,16 @@ Run the demo with `streamlit run example.py`.
 pip install streamlit-vanilla-components
 ```
 
-Or install straight from GitHub:
+Requires Python 3.10+ and Streamlit 1.57+.
 
-```bash
-pip install "git+https://github.com/lukehorton1/streamlit-vanilla-components.git"
+## Quickstart
+
+```python
+from streamlit_vanilla_components import st_live_searchbox, stateful_button
 ```
 
-Requires Python 3.10+ and Streamlit 1.57+.
+*Or download the `example.py` demo and run locally:* `streamlit run example.py`
+
 
 ## Components
 
