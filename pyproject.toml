@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "streamlit-vanilla-components"
+version = "0.1.0"
+description = "Vanilla HTML/CSS/JS Streamlit components with no npm dependencies."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+dependencies = ["streamlit>=1.57"]
+classifiers = [
+    "Framework :: Streamlit",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.urls]
+Repository = "https://github.com/lukehorton1/streamlit-vanilla-components"
+
+[tool.setuptools.packages.find]
+include = ["streamlit_vanilla_components*"]
+
+[tool.setuptools.package-data]
+"streamlit_vanilla_components.searchbox" = ["frontend/*"]
+"streamlit_vanilla_components.stateful_button" = ["frontend/*"]

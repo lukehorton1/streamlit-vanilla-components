@@ -1,3 +1,6 @@
 WORKING_NOTES.md
 __pycache__/
 .vscode/
+dist/
+build/
+*.egg-info/
