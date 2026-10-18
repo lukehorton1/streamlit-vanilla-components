@@ -12,7 +12,6 @@ license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = ["streamlit>=1.57"]
 classifiers = [
-    "Framework :: Streamlit",
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
