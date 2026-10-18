@@ -122,8 +122,8 @@ def searchbox_section():
 
 
 st.title("Vanilla Streamlit components")
-tab_button, tab_search = st.tabs(["Stateful button", "Live searchbox"])
-with tab_button:
+tab_button, tab_search = st.tabs(["Stateful button", "Live searchbox"], on_change="rerun")
+if tab_button.open:
     stateful_button_section()
-with tab_search:
+elif tab_search.open:
     searchbox_section()
