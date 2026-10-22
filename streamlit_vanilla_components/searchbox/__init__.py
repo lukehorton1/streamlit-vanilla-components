@@ -24,15 +24,27 @@ _COMPONENT = st.components.v2.component(
 )
 
 
-def _rank(options: list[str], term: str) -> list[str]:
-    """Stable sort by match quality, judged on the text before the first comma."""
+def _normalise(results) -> list[dict[str, str]]:
+    """Turn `str` or `(value, label)` items into `{"value", "label"}` dicts."""
+    options = []
+    for item in results or []:
+        if isinstance(item, (tuple, list)):
+            value, label = item
+        else:
+            value = label = item
+        options.append({"value": str(value), "label": str(label)})
+    return options
+
+
+def _rank(options: list[dict[str, str]], term: str) -> list[dict[str, str]]:
+    """Stable sort by match quality, judged on the label text before the first comma."""
     t = term.strip().lower()
     if not t:
         return options
     word_start = re.compile(r"\b" + re.escape(t))
 
-    def tier(option: str) -> int:
-        text = option.split(",")[0].strip().lower()
+    def tier(option: dict[str, str]) -> int:
+        text = option["label"].split(",")[0].strip().lower()
         if text == t:
             return 0
         if text.startswith(t):
@@ -47,12 +59,13 @@ def _rank(options: list[str], term: str) -> list[str]:
 
 
 def st_live_searchbox(
-    search_fn: Callable[[str], list[str]],
+    search_fn: Callable[[str], list[str] | list[tuple[str, str]]],
     placeholder: str = "Type to search...",
     key: str = "live_search",
     *,
     on_change: Callable | None = None,
     on_submit: Callable | None = None,
+    on_clear: Callable | None = None,
     args: tuple | None = None,
     kwargs: dict | None = None,
     debounce: int = 250,
@@ -64,17 +77,18 @@ def st_live_searchbox(
     min_chars: int = 1,
     max_results: int | None = None,
     rank: bool = False,
-    clear_on_submit: bool = False,
     width: str | int = "stretch",
 ) -> str | None:
     """Show a text box whose dropdown is filled by `search_fn(search_term)`.
 
-    `search_fn` returns a list of strings (e.g. from a SQL query) and runs after the
-    user pauses typing for `debounce` milliseconds. Returns the last option the user
-    picked (or `default`).
+    `search_fn` returns a list (e.g. from a SQL query) and runs after the user pauses
+    typing for `debounce` milliseconds. Each item is either a string, or a
+    `(value, label)` tuple: the label is shown, the value is returned (as a string).
+    Returns the last option the user picked (or `default`).
 
-    `on_change` runs when the typed text changes, `on_submit` when an option is picked.
-    Both run before the script reruns, like native widgets, and can read
+    `on_change` runs when the typed text changes, `on_submit` when an option is picked
+    and `on_clear` when the box is cleared (the X button, or deleting all the text).
+    `st.session_state[key].selected` holds the value, not the label. All run before the script reruns, like native widgets, and can read
     `st.session_state[key].query` and `st.session_state[key].selected`.
 
     `rank=True` re-orders the results by match quality: exact match, starts with the
@@ -83,8 +97,8 @@ def st_live_searchbox(
     ranking only sees what `search_fn` returns, return more candidates than
     `max_results` or the best match may already have been cut off.
 
-    `min_chars` holds back searching until enough text is typed, `max_results` caps the
-    list (applied after ranking), and `clear_on_submit` empties the box after a pick.
+    `min_chars` holds back searching until enough text is typed and `max_results` caps
+    the list (applied after ranking).
     """
 
     def wrap(fn):
@@ -99,9 +113,9 @@ def st_live_searchbox(
         selected = default
     selected = selected or None  # "" means the user cleared it
 
-    options: list[str] = []
+    options: list[dict[str, str]] = []
     if len(query) >= min_chars:
-        options = [str(o) for o in (search_fn(query) or [])]
+        options = _normalise(search_fn(query))
         if rank:
             options = _rank(options, query)
         if max_results is not None:
@@ -112,18 +126,18 @@ def st_live_searchbox(
         data={
             "options": options,
             "placeholder": placeholder,
-            "initial": "" if clear_on_submit else (selected or ""),
+            "initial": selected or "",
             "debounce": max(0, int(debounce)),
             "label": label,
             "labelVisibility": label_visibility,
             "help": help,
             "disabled": disabled,
-            "clearOnSubmit": clear_on_submit,
         },
         width=width,
         on_query_change=wrap(on_change),
         on_selected_change=lambda: None,
         on_submitted_change=wrap(on_submit),
+        on_cleared_change=wrap(on_clear),
     )
     if result.selected is None:
         return default

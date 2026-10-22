@@ -45,13 +45,14 @@ choice = st_live_searchbox(search_places, placeholder="Search a place...", rank=
 
 | Parameter | Description |
 |---|---|
-| `search_fn` *(callable)* | Receives the typed text and returns a list of options. Required. |
+| `search_fn` *(callable)* | Receives the typed text and returns a list of options: strings, or `(value, label)` tuples. Required. |
 | `placeholder` *(str)* | Placeholder text. Default `"Type to search..."`. |
 | `key` *(str)* | Widget key. Default `"live_search"`. |
 | `on_change` *(callable or None)* | Runs when the typed text changes. |
 | `on_submit` *(callable or None)* | Runs when an option is picked. |
-| `args` *(tuple or None)* | Passed to `on_change` and `on_submit`. |
-| `kwargs` *(dict or None)* | Passed to `on_change` and `on_submit`. |
+| `on_clear` *(callable or None)* | Runs when the box is cleared, by the ✕ button or by deleting all the text. |
+| `args` *(tuple or None)* | Passed to `on_change`, `on_submit` and `on_clear`. |
+| `kwargs` *(dict or None)* | Passed to `on_change`, `on_submit` and `on_clear`. |
 | `debounce` *(int)* | Milliseconds to wait after typing stops before searching. Default `250`. |
 | `default` *(str or None)* | Returned until something is picked. Default `None`. |
 | `label` *(str or None)* | Label above the box. |
@@ -61,14 +62,15 @@ choice = st_live_searchbox(search_places, placeholder="Search a place...", rank=
 | `min_chars` *(int)* | Characters typed before `search_fn` runs. Default `1`. |
 | `max_results` *(int or None)* | Maximum options shown, applied after ranking. Default `None`. |
 | `rank` *(bool)* | Sorts options by match quality (exact, starts with, word starts with, contains). Default `False`. |
-| `clear_on_submit` *(bool)* | Empties the box after a pick. Default `False`. |
 | `width` *(str or int)* | `"stretch"` or a pixel width. Default `"stretch"`. |
 
-**Returns** *(str or None)*: the picked option, or `default`.
+**Returns** *(str or None)*: the picked option's value, or `default`.
 
 ### See also
 
 - Typing again after a pick replaces it with the new text.
+- Return `(value, label)` tuples to show a rich label while returning a short value, e.g. `("P00769", "P00769 · Liverpool · United Kingdom · pop. 508,961")`. Build the label in your query so only matching rows are sent. The value is returned as a string, `rank` and `max_results` use the label, and duplicates are kept.
+- `st.session_state[key].selected` holds the value, not the label.
 - Ranking only sees what `search_fn` returns, so return more candidates than `max_results`.
 
 ---

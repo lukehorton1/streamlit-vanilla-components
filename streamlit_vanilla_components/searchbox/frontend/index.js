@@ -33,7 +33,7 @@ export default function (component) {
     list.hidden = !show
     input.setAttribute("aria-expanded", String(show))
     list.textContent = ""
-    options.forEach((text, i) => {
+    options.forEach(({ label: text }, i) => {
       const li = document.createElement("li")
       const span = document.createElement("span")
       span.title = text
@@ -73,37 +73,42 @@ export default function (component) {
   }
 
   function select(i) {
-    const value = options[i]
-    if (value === undefined) return
+    const option = options[i]
+    if (option === undefined) return
     clearTimeout(ui.timer)
-    setStateValue("selected", value)
-    setTriggerValue("submitted", value)
-    if (data.clearOnSubmit) {
-      input.value = ""
-      setStateValue("query", "")
-    } else {
-      input.value = value
-      ui.picked = value
-    }
+    setStateValue("selected", option.value)
+    setTriggerValue("submitted", option.value)
+    input.value = option.label
+    ui.picked = option.label
     close()
   }
 
   // mousedown keeps focus in the input; the click clears text and the picked result
   clear.onmousedown = (e) => e.preventDefault()
-  clear.onclick = () => {
+  function cleared() {
     clearTimeout(ui.timer)
     ui.picked = null
     input.value = ""
     setStateValue("selected", "")
     setStateValue("query", "")
+    setTriggerValue("cleared", true)
+  }
+
+  clear.onclick = () => {
+    cleared()
     input.focus()
     render()
   }
 
   function changed() {
     ui.open = true
-    clearTimeout(ui.timer)
     const text = input.value
+    if (!text) {
+      cleared()
+      render()
+      return
+    }
+    clearTimeout(ui.timer)
     ui.timer = setTimeout(() => setStateValue("query", text), data.debounce ?? 250)
     render()
   }
