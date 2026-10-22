@@ -120,6 +120,35 @@ def searchbox_section():
             # A single point makes st.map centre and zoom on it
             st.map(pd.DataFrame({"lat": [row["latitude"]], "lon": [row["longitude"]]}), zoom=6, size=300)
 
+    @demo
+    def label_example():
+        st.caption(
+            "Return `(value, label)` tuples: the box shows the long label, the function returns the short place_id."
+        )
+
+        def search_place_ids(term: str) -> list[tuple[str, str]]:
+            # Stand-in for SQL that builds the label in the query:
+            # SELECT place_id, place_id || ' · ' || name || ' · ' || country || ' · ' || population FROM places WHERE ...
+            mask = places["name"].str.contains(term, case=False, regex=False)
+            rows = places.loc[mask].head(50)
+            return [
+                (f"P{i:05d}", f"P{i:05d} · {r['name']} · {r['country_name']} · pop. {int(r['population']):,}")
+                for i, r in rows.iterrows()
+                if pd.notna(r["population"])
+            ]
+
+        def on_clear():
+            st.toast("Search cleared")
+
+        place_id = st_live_searchbox(
+            search_place_ids,
+            placeholder="Search by place name...",
+            label="Select a place",
+            key="place_id",
+            on_clear=on_clear,
+        )
+        st.write("Returned place_id:", place_id)
+
 
 st.title("Vanilla Streamlit components")
 tab_button, tab_search = st.tabs(["Stateful button", "Live searchbox"], on_change="rerun")
